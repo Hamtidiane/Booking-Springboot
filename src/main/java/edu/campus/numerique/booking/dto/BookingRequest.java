@@ -1,4 +1,4 @@
-package edu.campus.numerique.booking;
+package edu.campus.numerique.booking.dto;
 
 
 import lombok.AllArgsConstructor;

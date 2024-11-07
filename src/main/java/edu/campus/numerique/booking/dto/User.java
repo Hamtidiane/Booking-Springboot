@@ -1,4 +1,4 @@
-package edu.campus.numerique.booking;
+package edu.campus.numerique.booking.dto;
 
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -16,8 +16,6 @@ import java.time.LocalDate;
 public class User {
 
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
     private String name;
     private String firstName;

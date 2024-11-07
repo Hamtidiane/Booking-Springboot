@@ -30,6 +30,6 @@ public class Booking {
 
     private float estimatedMileage;
 
-
+    private double price;
 
 }

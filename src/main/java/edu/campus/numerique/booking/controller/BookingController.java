@@ -2,7 +2,6 @@ package edu.campus.numerique.booking.controller;
 
 
 import edu.campus.numerique.booking.Booking;
-import edu.campus.numerique.booking.BookingRequest;
 import edu.campus.numerique.booking.repository.BookingRepository;
 import edu.campus.numerique.booking.service.BookingService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -15,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/booking")
@@ -23,6 +23,8 @@ public class BookingController {
 
     @Autowired
     private BookingRepository bookingRepository;
+    @Autowired
+    private BookingService bookingService;
 
 
 
@@ -39,12 +41,9 @@ public class BookingController {
             @ApiResponse(responseCode = "404", description = "Réservation non trouvée")
     })
     @GetMapping("/{id}")
-    public ResponseEntity<Booking> getBookingById(@PathVariable Long id) {
-        if (bookingRepository.findById(id) != null) {
-            return ResponseEntity.ok(bookingRepository.findById(id));
-        } else {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        }
+    public ResponseEntity<Optional<Booking>> getBookingById(@PathVariable Long id) {
+        Optional<Booking> booking = bookingRepository.findById(id);
+        return booking.isPresent() ? ResponseEntity.ok(booking) : ResponseEntity.notFound().build();
     }
 
     @Operation(summary = "Créer une nouvelle réservation", description = "Ajoute une nouvelle réservation dans la base de données")
@@ -54,7 +53,7 @@ public class BookingController {
     })
     @PostMapping
     public ResponseEntity<Booking> createBooking(@RequestBody Booking booking) {
-        return new ResponseEntity<>(bookingRepository.save(booking), HttpStatus.CREATED);
+        return new ResponseEntity<>(bookingService.createBooking(booking), HttpStatus.CREATED);
     }
 
 
@@ -65,6 +64,29 @@ public class BookingController {
     })
     @PutMapping("/{id}")
     public ResponseEntity<Booking> updateBooking(@PathVariable Long id, @RequestBody Booking updatedbooking) {
-        return new ResponseEntity<>( bookingRepository.save(updatedbooking), HttpStatus.CREATED);
+        return bookingRepository.findById(id).map(booking -> {
+            booking.setStartDate(updatedbooking.getStartDate());
+            booking.setEndDate(updatedbooking.getEndDate());
+            booking.setEstimatedMileage(updatedbooking.getEstimatedMileage());
+            bookingRepository.save(booking);
+            return ResponseEntity.ok(booking);
+        }).orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+
+    @Operation(summary = "Supprimer une réservation par ID", description = "Supprime une réservation existant par son ID")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Réervation supprimée avec succès"),
+            @ApiResponse(responseCode = "404", description = "Réservation non trouvée")
+    })
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteBooking(@PathVariable Long id) {
+        if (bookingRepository.existsById(id)) {
+            bookingRepository.deleteById(id);
+            return ResponseEntity.noContent().build();
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+
     }
 }
