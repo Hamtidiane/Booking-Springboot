@@ -19,7 +19,5 @@ public class Vehicle {
     private Integer moteurcm3;
     private Integer volumecm3;
 
-    public String getType() {
-        return null;
-    }
+
 }
