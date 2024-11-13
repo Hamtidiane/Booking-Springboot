@@ -1,44 +1,85 @@
 package edu.campus.numerique.booking.service;
 
-import edu.campus.numerique.booking.Booking;
+
 import edu.campus.numerique.booking.dto.Vehicle;
 import edu.campus.numerique.booking.dto.User;
+import edu.campus.numerique.booking.Booking;
 import edu.campus.numerique.booking.repository.BookingRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.client.HttpClientErrorException;
 
+import java.util.List;
+import java.util.Optional;
+
 @Service
 public class BookingService {
 
-    private final BookingRepository bookingRepository;
+    @Autowired
+    private BookingRepository bookingRepository;
 
     @Autowired
     private RestTemplate restTemplate;  // Injection du RestTemplate pour appeler le microservice Vehicle
-    private static final String USER_SERVICE_URL = "http://192.168.1.248:8080/api/users"; // URL du microservice User
-    private static final String VEHICLE_SERVICE_URL = "http://localhost:8085/vehicles";
-    // URL du microservice Vehicle
+    private static final String USER_SERVICE_URL = "http://USERS/users"; // URL du microservice User
+    private static final String VEHICLE_SERVICE_URL = "http://CARLOCATION/vehicles";
 
     public BookingService(BookingRepository bookingRepository) {
         this.bookingRepository = bookingRepository;
     }
 
-    // Méthode pour créer une réservation avec l'objet Booking directement
+    public List<Booking> getAllBookings() {
+        return bookingRepository.findAll();
+    }
+
+    public ResponseEntity<Booking> getBookingById(Long id) {
+        Optional<Booking> booking = bookingRepository.findById(id);
+        return booking.isPresent() ? ResponseEntity.ok(booking.get()) : ResponseEntity.notFound().build();
+    }
+
     public Booking createBooking(Booking booking) {
         // Appel du microservice Vehicle pour récupérer les informations du véhicule
         Vehicle vehicle = getVehicleById(booking.getVehicleId());
-
-        User user = getUserById(booking.getUserId());
         // Calculer le prix en utilisant les informations du véhicule
         double price = calculatePrice(vehicle, booking.getEstimatedMileage());
         booking.setPrice(price);
-        booking.setUserId(user.getId());
-
         return bookingRepository.save(booking);
     }
 
-    // Méthode pour récupérer le véhicule par son ID en appelant le microservice Vehicle
+    public Booking updateBooking(Booking booking) {
+        Vehicle vehicle = getVehicleById(booking.getVehicleId());
+        double price = calculatePrice(vehicle, booking.getEstimatedMileage());
+        booking.setPrice(price);
+        return bookingRepository.save(booking);
+    }
+
+    public ResponseEntity<Booking> updateBooking(Long id, Booking updatedBooking) {
+        Optional<Booking> existingBooking = bookingRepository.findById(id);
+        if (existingBooking.isPresent()) {
+            Booking booking = existingBooking.get();
+            booking.setStartDate(updatedBooking.getStartDate());
+            booking.setEndDate(updatedBooking.getEndDate());
+            booking.setEstimatedMileage(updatedBooking.getEstimatedMileage());
+            booking.setPrice(updatedBooking.getPrice());
+            bookingRepository.save(booking);
+            return ResponseEntity.ok(booking);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    public ResponseEntity<Void> deleteBooking(Long id) {
+        if (bookingRepository.existsById(id)) {
+            bookingRepository.deleteById(id);
+            return ResponseEntity.noContent().build();
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+
+
     private Vehicle getVehicleById(Long vehicleId) {
         try {
             // Effectuer une requête GET pour récupérer le véhicule par son ID
@@ -71,4 +112,5 @@ public class BookingService {
         }
         return price;
     }
+
 }
