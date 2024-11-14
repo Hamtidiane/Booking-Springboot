@@ -47,21 +47,19 @@ public class BookingService {
         return bookingRepository.save(booking);
     }
 
-    public Booking updateBooking(Booking booking) {
-        Vehicle vehicle = getVehicleById(booking.getVehicleId());
-        double price = calculatePrice(vehicle, booking.getEstimatedMileage());
-        booking.setPrice(price);
-        return bookingRepository.save(booking);
-    }
+
 
     public ResponseEntity<Booking> updateBooking(Long id, Booking updatedBooking) {
         Optional<Booking> existingBooking = bookingRepository.findById(id);
+        System.out.println(updatedBooking);
         if (existingBooking.isPresent()) {
             Booking booking = existingBooking.get();
-            booking.setStartDate(updatedBooking.getStartDate());
+            booking.setStartDate( updatedBooking.getStartDate());
             booking.setEndDate(updatedBooking.getEndDate());
             booking.setEstimatedMileage(updatedBooking.getEstimatedMileage());
-            booking.setPrice(updatedBooking.getPrice());
+            Vehicle vehicle = getVehicleById(updatedBooking.getVehicleId());
+            double newPrice = calculatePrice(vehicle, updatedBooking.getEstimatedMileage());
+            booking.setPrice(newPrice);
             bookingRepository.save(booking);
             return ResponseEntity.ok(booking);
         } else {
